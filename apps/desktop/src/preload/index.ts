@@ -74,6 +74,11 @@ const desktopAPI = {
   },
   /** Validated runtime endpoint config, or a blocking config error. */
   runtimeConfig,
+  /** Update the server URL. Validates and writes to ~/.multica/desktop.json.
+   *  Returns the validated config on success or an error on failure.
+   *  The app must be restarted for the new config to take effect. */
+  updateRuntimeConfig: (apiUrl: string): Promise<RuntimeConfigResult> =>
+    ipcRenderer.invoke("runtime-config:update", apiUrl),
   /** Listen for auth token delivered via deep link */
   onAuthToken: (callback: (token: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, token: string) =>

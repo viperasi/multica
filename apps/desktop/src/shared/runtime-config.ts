@@ -82,6 +82,10 @@ export function parseRuntimeConfig(raw: string): RuntimeConfig {
   };
 }
 
+export function serializeRuntimeConfig(config: RuntimeConfig): string {
+  return JSON.stringify(config, null, 2) + "\n";
+}
+
 export function deriveWsUrl(apiUrl: string): string {
   const url = new URL(apiUrl);
   if (url.protocol === "https:") url.protocol = "wss:";

@@ -11,8 +11,9 @@ import { installContextMenu } from "./context-menu";
 import { handleAppShortcut } from "./keyboard-shortcuts";
 import { installNavigationGestures } from "./navigation-gestures";
 import { getAppVersion } from "./app-version";
-import { loadRuntimeConfig } from "./runtime-config-loader";
+import { loadRuntimeConfig, saveRuntimeConfig } from "./runtime-config-loader";
 import type { RuntimeConfigResult } from "../shared/runtime-config";
+import { parseRuntimeConfig } from "../shared/runtime-config";
 import {
   createElectronReloadPrompt,
   installRendererRecoveryHandlers,
@@ -389,6 +390,32 @@ if (!gotTheLock) {
     ipcMain.on("runtime-config:get", (event) => {
       event.returnValue = runtimeConfigResult;
     });
+
+    // IPC: update runtime config (server URL) from renderer. Validates and
+    // writes to ~/.multica/desktop.json. The app must restart to pick up the
+    // new endpoints — the renderer shows a prompt after save succeeds.
+    ipcMain.handle(
+      "runtime-config:update",
+      async (_event, apiUrl: string): Promise<RuntimeConfigResult> => {
+        try {
+          // Build a minimal JSON to reuse parseRuntimeConfig validation.
+          const raw = JSON.stringify({
+            schemaVersion: 1,
+            apiUrl,
+          });
+          const config = parseRuntimeConfig(raw);
+          await saveRuntimeConfig(config);
+          return { ok: true, config };
+        } catch (err) {
+          return {
+            ok: false,
+            error: {
+              message: err instanceof Error ? err.message : String(err),
+            },
+          };
+        }
+      },
+    );
 
     // IPC: toggle immersive mode — hides the macOS traffic lights so full-screen
     // modals (e.g. create-workspace) can place UI in the top-left corner
